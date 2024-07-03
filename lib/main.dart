@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       title: 'CHAT',
       initialRoute: "home",
       routes: {
-        "home" :(_) => HomePages()
+        "home" :(_) => HomePage()
       },
     );
   }
