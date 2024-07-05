@@ -1,7 +1,8 @@
 import 'dart:io';
-
+import 'package:pie_chart/pie_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import '../models/band.dart';
 import '../services/socket_services.dart';
@@ -59,9 +60,17 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: bands.length,
-        itemBuilder: (context, i) => BandTile(bands[i]),
+      body: Column(
+        children: <Widget>[
+          _showGraph(),
+Expanded(
+  child: ListView.builder(
+          itemCount: bands.length,
+          itemBuilder: (context, i) => BandTile(bands[i]),
+        ),
+),
+          
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -80,13 +89,9 @@ class _HomePageState extends State<HomePage> {
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
-      onDismissed: (direction) =>{
-       
-         socketService.emit("add-band", {'id': band.id})
-
+      onDismissed: (direction) => {
+        socketService.emit("add-band", {'id': band.id})
       },
-        
-   
       background: Container(
           color: Colors.red,
           padding: const EdgeInsets.only(left: 8.0),
@@ -176,7 +181,23 @@ class _HomePageState extends State<HomePage> {
 
   void addBandToList(String name) {
     final socketServices = Provider.of<SocketService>(context, listen: false);
- socketServices.emit("add-band", {"name": name});
-   Navigator.pop(context);
+    socketServices.emit("add-band", {"name": name});
+    Navigator.pop(context);
+  }
+  //mostrar Grafica
+ Widget _showGraph() {
+Map<String, double> dataMap = new Map();
+bands.forEach((band){
+  dataMap.putIfAbsent(band.name, () => band.votes.toDouble());
+});
+
+  return Container(
+    width: double.infinity,
+    height: 200,
+    child: PieChart(dataMap: dataMap));
+  
+
+
+
   }
 }
