@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/band.dart';
+import '../services/socket_services.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,18 +15,49 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Band> bands = [
-    Band(id: "1", name: "Metallica", votes: 5),
-    Band(id: "2", name: "Queen", votes: 3),
-    Band(id: "3", name: "The Beatles", votes: 4),
-    Band(id: "4", name: "Mägo de Oz", votes: 5),
+  
   ];
 
   @override
   Widget build(BuildContext context) {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
+    @override
+    void initState() {
+      final socketService = Provider.of<SocketService>(context, listen: false);
+      socketService.socket!.on('active-bands', (p) => {
+      // ignore: unnecessary_this
+      this.bands = (p as List )
+      .map((band) => Band.fromMap(band))
+      .toList(),
+      setState(() {
+      })
+      });
+      super.initState();
+    }
+
+    @override
+    void dispose() {
+      final socketService = Provider.of<SocketService>(context, listen: false);
+      socketService.socket!.off('active-bands');
+      super.dispose();
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Center(child: Text('Bandas Nombre')),
+        actions: <Widget>[
+          Container(
+            margin: EdgeInsets.only(right: 10),
+            child: socketService.serverStatus == ServerStatus.Online
+                ? Icon(Icons.check_circle, color: Colors.blue[300])
+                : Icon(
+                    Icons.offline_bolt,
+                    color: Colors.red[300],
+                  ),
+          )
+        ],
       ),
       body: ListView.builder(
         itemCount: bands.length,
@@ -34,30 +67,33 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           addNewBand(context);
         },
-        child: const Icon(Icons.add),
         elevation: 1,
+        child: const Icon(Icons.add),
       ),
     );
   }
 
- // ignore: non_constant_identifier_names
- Widget BandTile(Band band) {
+  // ignore: non_constant_identifier_names
+  Widget BandTile(Band band) {
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
-      onDismissed: ( direction)=> print("direccion ${direction} y id ${band.id}") ,
-      background: Container(color: Colors.red,
-      padding: const EdgeInsets.only(left: 8.0),
-        
-      child: const Align(
-        alignment: Alignment.centerLeft,
-        child: Icon(Icons.delete_rounded, color: Colors.white,),
-        )
-        ),
+      onDismissed: (direction) =>
+          print("direccion ${direction} y id ${band.id}"),
+      background: Container(
+          color: Colors.red,
+          padding: const EdgeInsets.only(left: 8.0),
+          child: const Align(
+            alignment: Alignment.centerLeft,
+            child: Icon(
+              Icons.delete_rounded,
+              color: Colors.white,
+            ),
+          )),
       child: ListTile(
         leading: CircleAvatar(
-          child: Text(band.name.substring(0, 2)),
           backgroundColor: Colors.blue[100],
+          child: Text(band.name.substring(0, 2)),
         ),
         title: Text(band.name),
         trailing: Text('${band.votes}', style: const TextStyle(fontSize: 20)),
@@ -92,8 +128,8 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text("Agregar"),
                 elevation: 5,
+                child: const Text("Agregar"),
               ),
             ],
           );
