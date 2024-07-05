@@ -14,29 +14,29 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Band> bands = [
-  
-  ];
+  List<Band> bands = [];
 
   @override
   Widget build(BuildContext context) {
     final socketService = Provider.of<SocketService>(context, listen: false);
 
     @override
+    // ignore: unused_element
     void initState() {
       final socketService = Provider.of<SocketService>(context, listen: false);
-      socketService.socket!.on('active-bands', (p) => {
-      // ignore: unnecessary_this
-      this.bands = (p as List )
-      .map((band) => Band.fromMap(band))
-      .toList(),
-      setState(() {
-      })
-      });
+      socketService.socket!.on(
+          'active-bands',
+          (p) => {
+                // ignore: unnecessary_this
+                this.bands =
+                    (p as List).map((band) => Band.fromMap(band)).toList(),
+                setState(() {})
+              });
       super.initState();
     }
 
     @override
+    // ignore: unused_element
     void dispose() {
       final socketService = Provider.of<SocketService>(context, listen: false);
       socketService.socket!.off('active-bands');
@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
         title: const Center(child: Text('Bandas Nombre')),
         actions: <Widget>[
           Container(
-            margin: EdgeInsets.only(right: 10),
+            margin: const EdgeInsets.only(right: 10),
             child: socketService.serverStatus == ServerStatus.Online
                 ? Icon(Icons.check_circle, color: Colors.blue[300])
                 : Icon(
@@ -75,11 +75,18 @@ class _HomePageState extends State<HomePage> {
 
   // ignore: non_constant_identifier_names
   Widget BandTile(Band band) {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
-      onDismissed: (direction) =>
-          print("direccion ${direction} y id ${band.id}"),
+      onDismissed: (direction) =>{
+       
+         socketService.emit("add-band", {'id': band.id})
+
+      },
+        
+   
       background: Container(
           color: Colors.red,
           padding: const EdgeInsets.only(left: 8.0),
@@ -98,7 +105,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(band.name),
         trailing: Text('${band.votes}', style: const TextStyle(fontSize: 20)),
         onTap: () {
-          print("Presionó ${band.name}");
+          socketService.socket!.emit('vote-band', {'id': band.id});
         },
       ),
     );
@@ -119,13 +126,7 @@ class _HomePageState extends State<HomePage> {
               MaterialButton(
                 onPressed: () {
                   if (textController.text.isNotEmpty) {
-                    setState(() {
-                      bands.add(Band(
-                          id: DateTime.now().toString(),
-                          name: textController.text,
-                          votes: 5));
-                    });
-                    Navigator.pop(context);
+                    addBandToList(textController.text);
                   }
                 },
                 elevation: 5,
@@ -171,5 +172,11 @@ class _HomePageState extends State<HomePage> {
             );
           });
     }
+  }
+
+  void addBandToList(String name) {
+    final socketServices = Provider.of<SocketService>(context, listen: false);
+ socketServices.emit("add-band", {"name": name});
+   Navigator.pop(context);
   }
 }
